@@ -1,0 +1,13 @@
+# vagrant
+.vagrant/
+
+# temp files
+*.tmp
+*_tmp.*
+*_temp.*
+
+# python compiled files
+*.pyc
+
+# db files
+*.db
