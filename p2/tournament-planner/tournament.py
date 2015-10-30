@@ -13,14 +13,32 @@ def connect():
 
 def deleteMatches():
     """Remove all the match records from the database."""
+    conn = connect()
+    c = conn.cursor()
+    c.execute("DELETE FROM matches;")
+    conn.commit()
+    conn.close()
 
 
 def deletePlayers():
     """Remove all the player records from the database."""
+    conn = connect()
+    c = conn.cursor()
+    c.execute("DELETE FROM players;")
+    conn.commit()
+    conn.close()
 
 
 def countPlayers():
     """Returns the number of players currently registered."""
+    conn = connect()
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM players;")
+    result = c.fetchone()
+    conn.commit()
+    conn.close()
+    count = result[0]
+    return count
 
 
 def registerPlayer(name):
@@ -32,6 +50,11 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
+    conn = connect()
+    c = conn.cursor()
+    c.execute("INSERT INTO players VALUES (%s);", (name,))
+    conn.commit()
+    conn.close()
 
 
 def playerStandings():
@@ -73,5 +96,3 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-
-
