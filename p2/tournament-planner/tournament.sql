@@ -18,9 +18,9 @@ CREATE TABLE matches (
 /* Create Views */
 -- The number of matches each player has played
 CREATE VIEW v_numMatches AS
-    SELECT id, COUNT(*) AS matchesPlayed
-    FROM players, matches
-    WHERE p1 = id or p2 = id
+    SELECT id, COUNT(winner) AS matchesPlayed
+    FROM players LEFT JOIN matches
+    ON (p1 = id OR p2 = id)
     GROUP BY players.id
     ORDER BY players.id;
 
