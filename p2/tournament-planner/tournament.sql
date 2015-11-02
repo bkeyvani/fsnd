@@ -41,3 +41,18 @@ CREATE VIEW v_playerStandings AS
     (players.id = v_numWins.id)
     JOIN v_numMatches ON (players.id = v_numMatches.id)
     ORDER BY wins DESC;
+
+-- Swiss pairings view
+CREATE VIEW v_swissParings AS
+    SELECT
+        vps1.id AS id1,
+        vps1.name AS name1,
+        vps2.id AS id2,
+        vps2.name AS name2
+    FROM v_playerstandings vps1
+    JOIN v_playerstandings vps2
+    ON (vps1.wins = vps2.wins)
+    AND vps1.id > vps2.id
+    ORDER BY
+        id1 DESC,
+        id2 DESC;
