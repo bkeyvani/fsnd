@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-import logging
 import math
-import random
 import psycopg2
+import random
 from tournament import connect, \
                        playerStandings, \
                        registerPlayer, \
                        reportMatch, \
                        swissPairings
+from util.logger import logger
 
 def create_db():
     """
@@ -67,7 +67,7 @@ def create_indices():
     # To prevent rematch btw players
     c.execute(
         """
-        CREATE UNIQUE INDEX matches_uni_idx ON matches
+        CREATE UNIQUE INDEX matches_uniq_idx ON matches
            (greatest(winner, loser), least(winner, loser));
         """)
     conn.commit()
@@ -125,20 +125,19 @@ def create_views():
 
 if __name__ == '__main__':
     # start logging
-    logging.basicConfig(filename='myapp.log', level=logging.INFO)
-    logging.info('Started')
+    logger.info('Started')
 
     # create the tournament DB
     create_db()
-    logging.info('Created DB')
+    logger.info('Created DB')
 
     # create tables and views
     create_tables()
-    logging.info('Created tables')
+    logger.info('Created tables')
     create_indices()
-    logging.info('Created indices')
+    logger.info('Created indices')
     create_views()
-    logging.info('Created views')
+    logger.info('Created views')
 
     # Register players
     PLAYERS = ['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5', 'Player 6', 'Player 7', 'Player 8', 'Player 9', 'Player 10', 'Player 11', 'Player 12', 'Player 13', 'Player 14', 'Player 15', 'Player 16', 'Player 17', 'Player 18', 'Player 19', 'Player 20', 'Player 21', 'Player 22', 'Player 23', 'Player 24', 'Player 25', 'Player 26', 'Player 27', 'Player 28', 'Player 29', 'Player 30', 'Player 31', 'Player 32', 'Player 33', 'Player 34', 'Player 35', 'Player 36', 'Player 37', 'Player 38', 'Player 39', 'Player 40', 'Player 41', 'Player 42', 'Player 43', 'Player 44', 'Player 45', 'Player 46', 'Player 47', 'Player 48', 'Player 49', 'Player 50', 'Player 51', 'Player 52', 'Player 53', 'Player 54', 'Player 55', 'Player 56', 'Player 57', 'Player 58', 'Player 59', 'Player 60', 'Player 61', 'Player 62', 'Player 63', 'Player 64',]
@@ -147,11 +146,11 @@ if __name__ == '__main__':
     for player in PLAYERS:
         registerPlayer(player)
 
-    logging.info('Registered all players')
+    logger.info('Registered all players')
     game_rounds = int(math.log(len(PLAYERS), 2))
     # Append initial player standings
     for game_round in xrange(game_rounds):
-        logging.info('%s Round: %s %s', '=' * 10, game_round, '=' * 10)
+        logger.info('%s Round: %s %s', '=' * 10, game_round, '=' * 10)
         sp = swissPairings()
         for pair in sp:
             winner_id = pair[0]
