@@ -4,6 +4,7 @@
 #
 
 import psycopg2
+import random
 
 
 def connect():
@@ -89,11 +90,30 @@ def reportMatch(winner, loser):
     conn = connect()
     c = conn.cursor()
     c.execute(
-        "INSERT INTO matches VALUES (%s, %s, %s);",
-        (winner, loser, winner))
+        "INSERT INTO matches VALUES (%s, %s);",
+        (winner, loser))
     conn.commit()
     conn.close()
 
+
+def getMatches():
+    """Returns a list of previous matches between players, sorted by winner.
+
+    This list is used to lookup previous matches and avoid rematches between
+    players.
+
+    Returns:
+      A list of tuples, each of which contains (winner, loser):
+        winner: the winner's id (assigned by the database)
+        loser: the loser's id (assigned by the database)
+    """
+    conn = connect()
+    c = conn.cursor()
+    c.execute( "SELECT * FROM matches ORDER BY winner DESC;")
+    results = c.fetchall()
+    conn.commit
+    conn.close()
+    return results
 
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
@@ -110,10 +130,48 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    conn = connect()
-    c = conn.cursor()
-    c.execute("SELECT * from v_swissParings;")
-    results = c.fetchall()
-    conn.commit()
-    conn.close()
-    return results
+    # ps is a list of (id, name, wins, matches) tuples
+    ps = playerStandings()
+
+    # get all previous matches
+    matches = getMatches()
+
+    # pairs is a list of randomly mached players with the same rank that
+    # weren't matched before
+    # e.g.
+    #     [((id1, name1, wins1, matches1), (id2, name2, wins2, matches2)),
+    #      ((id3, name3, wins3, matches3), (id4, name4, wins4, matches4)),
+    #      ...]
+    pairs = []
+
+    # max number of wins in playerStandings
+    max_wins = ps[0][2]
+
+    # group players by ranks
+    groups = {}
+    for num_wins in xrange(max_wins + 1):
+        same_rank = [row for row in ps if row[2] == num_wins]
+        groups[num_wins] = same_rank
+
+    # randomly match potential players in each group
+    for i in xrange(max_wins + 1):
+        while len(groups[i]):
+            winner = random.choice(groups[i])
+            winner_id = winner[0]
+            winner_name = winner[1]
+            loser = random.choice(groups[i])
+            loser_id = loser[0]
+            loser_name = loser[1]
+
+            # If players are not the same and were not previously matched, add
+            # them to pairs
+            if winner != loser and not (
+                    (winner_id, loser_id) in matches or
+                    (loser_id, winner_id) in matches
+                ):
+                pairs.append((winner_id, winner_name, loser_id, loser_name))
+                # remove matched players from list
+                groups[i].remove(winner)
+                groups[i].remove(loser)
+
+    return pairs
