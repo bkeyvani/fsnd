@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
+import logging
+import math
 import random
 import psycopg2
 from tournament import connect, \
                        playerStandings, \
                        registerPlayer, \
-                       reportMatch
+                       reportMatch, \
+                       swissPairings
 
 def create_db():
     """
@@ -46,10 +49,26 @@ def create_tables():
     c.execute(
         """
         CREATE TABLE matches (
-            p1 int REFERENCES players (id),
-            p2 int REFERENCES players (id),
-            winner int REFERENCES players (id)
+            winner int REFERENCES players (id),
+            loser int REFERENCES players (id),
+            PRIMARY KEY (winner, loser)
         );
+        """)
+    conn.commit()
+    conn.close()
+
+def create_indices():
+    """
+    Create indices for tables.
+    """
+    conn = connect()
+    c = conn.cursor()
+
+    # To prevent rematch btw players
+    c.execute(
+        """
+        CREATE UNIQUE INDEX matches_uni_idx ON matches
+           (greatest(winner, loser), least(winner, loser));
         """)
     conn.commit()
     conn.close()
@@ -61,7 +80,6 @@ def create_views():
     v_numMatches: The number of matches each player has played
     v_numWins: The number of wins for each player
     v_playerStandings
-    v_swissParings
     """
     conn = connect()
     c = conn.cursor()
@@ -72,7 +90,7 @@ def create_views():
         CREATE VIEW v_numMatches AS
             SELECT id, COUNT(winner) AS matchesPlayed
             FROM players LEFT JOIN matches
-            ON (p1 = id OR p2 = id)
+            ON (winner = id OR loser = id)
             GROUP BY players.id
             ORDER BY players.id;
         """)
@@ -101,62 +119,41 @@ def create_views():
             ORDER BY wins DESC;
         """)
 
-    # Create v_swissParings view
-    c.execute(
-        """
-        CREATE VIEW v_swissParings AS
-            SELECT
-                vps1.id AS id1,
-                vps1.name AS name1,
-                vps2.id AS id2,
-                vps2.name AS name2
-            FROM v_playerstandings vps1
-            JOIN v_playerstandings vps2
-            ON (vps1.wins = vps2.wins)
-            AND vps1.id > vps2.id
-            ORDER BY
-                id1 DESC,
-                id2 DESC;
-        """)
-
     conn.commit()
     conn.close()
 
 
-def match_players(groups, num_wins):
-    """
-    Randomly match players of each group together. Each group of players
-    consitst of players in the same ranking (i.e. same number of wins)
-    """
-    for i in xrange(len(groups[num_wins]) / 2):
-        winner_row = random.choice(groups[num_wins])
-        winner_id = winner_row[0]
-        groups[num_wins].remove(winner_row)
-        loser_row = random.choice(groups[num_wins])
-        loser_id = loser_row[0]
-        groups[num_wins].remove(loser_row)
-        reportMatch(winner_id, loser_id)
-
-
 if __name__ == '__main__':
+    # start logging
+    logging.basicConfig(filename='myapp.log', level=logging.INFO)
+    logging.info('Started')
+
     # create the tournament DB
     create_db()
+    logging.info('Created DB')
 
     # create tables and views
     create_tables()
+    logging.info('Created tables')
+    create_indices()
+    logging.info('Created indices')
     create_views()
+    logging.info('Created views')
 
     # Register players
-    PLAYERS = ['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5', 'Player 6', 'Player 7', 'Player 8', 'Player 9', 'Player 10', 'Player 11', 'Player 12', 'Player 13', 'Player 14', 'Player 15', 'Player 16',]
+    PLAYERS = ['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5', 'Player 6', 'Player 7', 'Player 8', 'Player 9', 'Player 10', 'Player 11', 'Player 12', 'Player 13', 'Player 14', 'Player 15', 'Player 16', 'Player 17', 'Player 18', 'Player 19', 'Player 20', 'Player 21', 'Player 22', 'Player 23', 'Player 24', 'Player 25', 'Player 26', 'Player 27', 'Player 28', 'Player 29', 'Player 30', 'Player 31', 'Player 32', 'Player 33', 'Player 34', 'Player 35', 'Player 36', 'Player 37', 'Player 38', 'Player 39', 'Player 40', 'Player 41', 'Player 42', 'Player 43', 'Player 44', 'Player 45', 'Player 46', 'Player 47', 'Player 48', 'Player 49', 'Player 50', 'Player 51', 'Player 52', 'Player 53', 'Player 54', 'Player 55', 'Player 56', 'Player 57', 'Player 58', 'Player 59', 'Player 60', 'Player 61', 'Player 62', 'Player 63', 'Player 64',]
 
     # Register all players
     for player in PLAYERS:
         registerPlayer(player)
 
+    logging.info('Registered all players')
+    game_rounds = int(math.log(len(PLAYERS), 2))
     # Append initial player standings
-    for game_round in xrange(4):
-        ps = playerStandings()
-        groups = []
-        for num_wins in xrange(game_round + 1):
-            groups.append([row for row in ps if row[2] == num_wins])
-            match_players(groups, num_wins)
+    for game_round in xrange(game_rounds):
+        logging.info('%s Round: %s %s', '=' * 10, game_round, '=' * 10)
+        sp = swissPairings()
+        for pair in sp:
+            winner_id = pair[0]
+            loser_id = pair[2]
+            reportMatch(winner_id, loser_id)
