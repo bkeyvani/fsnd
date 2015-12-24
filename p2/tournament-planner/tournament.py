@@ -111,7 +111,7 @@ def getMatches():
     """
     conn = connect()
     c = conn.cursor()
-    c.execute( "SELECT * FROM matches ORDER BY winner DESC;")
+    c.execute("SELECT * FROM matches ORDER BY winner DESC;")
     results = c.fetchall()
     conn.commit
     conn.close()
@@ -135,59 +135,22 @@ def swissPairings():
     # ps is a list of (id, name, wins, matches) tuples
     ps = playerStandings()
 
-    # get all previous matches
-    matches = getMatches()
+    # pair/zip each two adjasent players from player standings since they are
+    # already sorted by their game rank.
+    # zipped will be a list of all playerStandings with the following
+    # structure:
+    # [(id1, 'name1', wins1, matches1), (id2, 'name2', wins2, matches2),
+    #  (id3, 'name3', wins3, matches3), (id4, 'name4', wins4, matches4),
+    #  ...
+    # ]
+    zipped = zip(ps[0::2], ps[1::2])
 
-    # pairs is a list of randomly mached players with the same rank that
-    # weren't matched before
-    # e.g.
-    #     [((id1, name1, wins1, matches1), (id2, name2, wins2, matches2)),
-    #      ((id3, name3, wins3, matches3), (id4, name4, wins4, matches4)),
-    #      ...]
-    pairs = []
-
-    # max number of wins in playerStandings
-    max_wins = ps[0][2]
-
-    # group players by ranks
-    groups = {}
-    for num_wins in xrange(max_wins + 1):
-        same_rank = [row for row in ps if row[2] == num_wins]
-        groups[num_wins] = same_rank
-
-    # seed the random function with time.time() to ensure unique and different
-    # seeds each time this function runs.
-    random.seed(time.time())
-
-    # randomly match potential players in each group
-    for i in xrange(max_wins + 1):
-        tries = 1
-        msg = "Randomly matching players with %s wins." % i
-        logger.info(msg)
-        while len(groups[i]):
-            logger.info("\t'swissPairings' Try: %s", tries)
-            winner = random.choice(groups[i])
-            winner_id = winner[0]
-            winner_name = winner[1]
-            loser = random.choice(groups[i])
-            loser_id = loser[0]
-            loser_name = loser[1]
-
-            # If players are not the same and were not previously matched, add
-            # them to pairs
-            if winner != loser and not (
-                    (winner_id, loser_id) in matches or
-                    (loser_id, winner_id) in matches
-                ):
-                pairs.append((winner_id, winner_name, loser_id, loser_name))
-                # remove matched players from list
-                groups[i].remove(winner)
-                groups[i].remove(loser)
-            else:
-                tries += 1
-            if tries > 5:
-                msg = "Exceeded number of tries (5) on (%s, %s)" % (
-                    winner_id, loser_id)
-                raise RuntimeError(msg)
+    # for each row of zipped list retrun a list of tuples with the following
+    # structure:
+    # [(id1, name1, id2, name2),
+    #  (id3, name3, id4, name4),
+    #  ...
+    # ]
+    pairs = [(row[0][0], row[0][1], row[1][0], row[1][1]) for row in zipped]
 
     return pairs

@@ -150,20 +150,18 @@ if __name__ == '__main__':
     logger.info('Registered all players')
     game_rounds = int(math.log(len(PLAYERS), 2))
     # Append initial player standings
+    tries = 1
     for game_round in xrange(game_rounds):
         logger.info('%s Round: %s %s', '=' * 10, game_round, '=' * 10)
-        tries = 1
-        while tries < 6:
-            try:
-                logger.info("\t'populate.py' Try: %s", tries)
-                sp = swissPairings()
-                for pair in sp:
-                    winner_id = pair[0]
-                    loser_id = pair[2]
-                    reportMatch(winner_id, loser_id)
-            except RuntimeError as e:
-                logger.error(e)
-
+        try:
+            logger.info("\t'populate.py' Try: %s", tries)
+            sp = swissPairings()
+            for pair in sp:
+                winner_id = pair[0]
+                loser_id = pair[2]
+                reportMatch(winner_id, loser_id)
+        except psycopg2.IntegrityError as e:
+            logger.error(e)
             tries += 1
 
     if tries < 6:
