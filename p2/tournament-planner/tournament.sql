@@ -10,7 +10,8 @@ CREATE TABLE players (
     id serial PRIMARY KEY
 );
 
--- The matches table
+-- The matches table contains records of each match and the winner and the
+-- loser of each match
 CREATE TABLE matches (
     winner int REFERENCES players (id),
     loser int REFERENCES players (id),
