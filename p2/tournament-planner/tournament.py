@@ -5,6 +5,8 @@
 
 import psycopg2
 import random
+import time
+from util.logger import logger
 
 
 def connect():
@@ -153,9 +155,17 @@ def swissPairings():
         same_rank = [row for row in ps if row[2] == num_wins]
         groups[num_wins] = same_rank
 
+    # seed the random function with time.time() to ensure unique and different
+    # seeds each time this function runs.
+    random.seed(time.time())
+
     # randomly match potential players in each group
     for i in xrange(max_wins + 1):
+        tries = 1
+        msg = "Randomly matching players with %s wins." % i
+        logger.info(msg)
         while len(groups[i]):
+            logger.info("\t'swissPairings' Try: %s", tries)
             winner = random.choice(groups[i])
             winner_id = winner[0]
             winner_name = winner[1]
@@ -173,5 +183,11 @@ def swissPairings():
                 # remove matched players from list
                 groups[i].remove(winner)
                 groups[i].remove(loser)
+            else:
+                tries += 1
+            if tries > 5:
+                msg = "Exceeded number of tries (5) on (%s, %s)" % (
+                    winner_id, loser_id)
+                raise RuntimeError(msg)
 
     return pairs

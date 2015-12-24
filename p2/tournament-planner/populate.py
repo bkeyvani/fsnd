@@ -3,6 +3,7 @@
 import math
 import psycopg2
 import random
+import sys
 from tournament import connect, \
                        playerStandings, \
                        registerPlayer, \
@@ -151,8 +152,30 @@ if __name__ == '__main__':
     # Append initial player standings
     for game_round in xrange(game_rounds):
         logger.info('%s Round: %s %s', '=' * 10, game_round, '=' * 10)
-        sp = swissPairings()
-        for pair in sp:
-            winner_id = pair[0]
-            loser_id = pair[2]
-            reportMatch(winner_id, loser_id)
+        tries = 1
+        while tries < 6:
+            try:
+                logger.info("\t'populate.py' Try: %s", tries)
+                sp = swissPairings()
+                for pair in sp:
+                    winner_id = pair[0]
+                    loser_id = pair[2]
+                    reportMatch(winner_id, loser_id)
+            except RuntimeError as e:
+                logger.error(e)
+
+            tries += 1
+
+    if tries < 6:
+        msg = "All players matched successfully in %s attempts!" % tries
+        logger.info(msg)
+        print msg
+        sys.exit(0)
+    else:
+        msg = """
+        The app exceeded number of allowed tries (5). Please try again
+        later.
+        """
+        logger.info(msg)
+        print msg
+        sys.exit(1)
