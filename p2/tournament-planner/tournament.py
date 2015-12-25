@@ -134,23 +134,30 @@ def swissPairings():
     """
     # ps is a list of (id, name, wins, matches) tuples
     ps = playerStandings()
+    # a list of all previous matches
+    prev_matches = getMatches()
 
-    # pair/zip each two adjasent players from player standings since they are
-    # already sorted by their game rank.
-    # zipped will be a list of all playerStandings with the following
-    # structure:
-    # [(id1, 'name1', wins1, matches1), (id2, 'name2', wins2, matches2),
-    #  (id3, 'name3', wins3, matches3), (id4, 'name4', wins4, matches4),
-    #  ...
-    # ]
-    zipped = zip(ps[0::2], ps[1::2])
-
-    # for each row of zipped list retrun a list of tuples with the following
-    # structure:
-    # [(id1, name1, id2, name2),
-    #  (id3, name3, id4, name4),
-    #  ...
-    # ]
-    pairs = [(row[0][0], row[0][1], row[1][0], row[1][1]) for row in zipped]
+    pairs = []
+    for p1 in ps:
+        p1_id = p1[0]
+        p1_name = p1[1]
+        p1_wins = p1[2]
+        # get a list of all players with the same wins or one less
+        same_or_next_rank = [row for row in ps if row[2] >= p1_wins - 1]
+        # pair the next player from the same_or_next_rank list who has not
+        # been matched before.
+        for p2 in same_or_next_rank:
+            p2_id = p2[0]
+            p2_name = p2[1]
+            if p1_id != p2_id and not(
+                (p1_id, p2_id) in prev_matches or
+                (p2_id, p1_id) in prev_matches):
+                pairs.append((p1_id, p1_name, p2_id, p2_name))
+                ps.remove(p1)
+                ps.remove(p2)
+                break
+            else:
+                logger.warn('skipped: %s', (p1_id, p2_id))
+        logger.info('-' * 20)
 
     return pairs
