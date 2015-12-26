@@ -4,8 +4,6 @@
 #
 
 import psycopg2
-import random
-import time
 from util.logger import logger
 
 
