@@ -145,13 +145,13 @@ def swissPairings():
         p1_name = p1[1]
         p1_wins = p1[2]
         # get a list of all players with the same wins or one less
-        same_or_next_rank = [row for row in ps if row[2] >= p1_wins - 1]
-        # reverse same_or_next_rank to reduce the chance of trying to pair
-        # already matched players
-        same_or_next_rank.reverse()
-        # pair the next player from the same_or_next_rank list who has not
-        # been matched before.
-        for p2 in same_or_next_rank:
+        same_rank = [row for row in ps if row[2] == p1_wins]
+        # reverse same_rank to reduce the chance of trying to pair already
+        # matched players
+        same_rank.reverse()
+        # pair the next player from the same_rank list who has not been
+        # matched before.
+        for p2 in same_rank:
             p2_id = p2[0]
             p2_name = p2[1]
             if p1_id != p2_id and not(
