@@ -149,7 +149,9 @@ if __name__ == '__main__':
 
     logger.info('Registered all players')
     game_rounds = int(math.log(len(PLAYERS), 2))
-    # Append initial player standings
+
+    # Allow the app to try 5 times before gracefully quiting with an error
+    # message.
     tries = 1
     for game_round in xrange(game_rounds):
         logger.info('%s Round: %s %s', '=' * 10, game_round, '=' * 10)
@@ -164,16 +166,16 @@ if __name__ == '__main__':
             logger.error(e)
             tries += 1
 
-    if tries < 6:
-        msg = "All players matched successfully in %s attempts!" % tries
-        logger.info(msg)
-        print msg
-        sys.exit(0)
-    else:
-        msg = """
-        The app exceeded number of allowed tries (5). Please try again
-        later.
-        """
-        logger.info(msg)
-        print msg
-        sys.exit(1)
+        if tries > 5:
+            msg = """
+            The app exceeded number of allowed tries (5). Please try again
+            later.
+            """
+            logger.info(msg)
+            print msg
+            sys.exit(1)
+
+    msg = "All players matched successfully in %s attempts!" % tries
+    logger.info(msg)
+    print msg
+    sys.exit(0)
