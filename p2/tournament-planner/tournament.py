@@ -138,7 +138,9 @@ def swissPairings():
     prev_matches = getMatches()
 
     pairs = []
-    for p1 in ps:
+    while len(ps):
+        # grab the first player from the player standings list
+        p1 = ps.pop(0)
         p1_id = p1[0]
         p1_name = p1[1]
         p1_wins = p1[2]
@@ -156,11 +158,9 @@ def swissPairings():
                 (p1_id, p2_id) in prev_matches or
                 (p2_id, p1_id) in prev_matches):
                 pairs.append((p1_id, p1_name, p2_id, p2_name))
-                ps.remove(p1)
                 ps.remove(p2)
                 break
             else:
                 logger.warn('skipped: %s', (p1_id, p2_id))
-        logger.info('-' * 20)
 
     return pairs
